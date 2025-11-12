@@ -14,4 +14,23 @@ class Profile < ApplicationRecord
       category: category
     ).first
   end
+
+  def get_coverage_balance(category)
+    balance = coverage_balances.find_by(category: category)
+    return nil unless balance
+
+    {
+      category: category,
+      remaining_amount: balance.remaining_amount,
+      reset_date: balance.reset_date,
+      rule_version_id: balance.rule_version_id
+    }
+  end
+
+  def get_benefit_coverage(category)
+    benefit = benefit_for(category)
+    return nil unless benefit
+
+    benefit.coverage
+  end
 end
