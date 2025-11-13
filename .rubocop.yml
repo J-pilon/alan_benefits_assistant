@@ -1,5 +1,10 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+AllCops:
+  Exclude:
+    - 'db/**/*.rb'
+    - 'bin/**/*'
+    - 'vendor/**/*'
 
 # Overwrite or add rules to create your own house style
 #

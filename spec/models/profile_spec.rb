@@ -30,7 +30,7 @@ RSpec.describe Profile, type: :model do
       end
 
       it 'rejects invalid province codes' do
-        invalid_provinces = ["XX", "US", "CA", "", "Ontario", "ontario"]
+        invalid_provinces = [ "XX", "US", "CA", "", "Ontario", "ontario" ]
 
         invalid_provinces.each do |province|
           profile = build(:profile, province: province)
