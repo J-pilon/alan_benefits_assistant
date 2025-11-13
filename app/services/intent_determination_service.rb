@@ -9,10 +9,12 @@ class IntentDeterminationService
   def perform(user_query)
     return error_result("User query cannot be blank") if user_query.blank?
 
-    sanitized_query = redact_sensitive_information(user_query)
+    redaction_result = redact_sensitive_information(user_query)
+    return redaction_result if redaction_result.failure?
+
     system_prompt = build_system_prompt
 
-    ai_client.determine_intent(system_prompt: system_prompt, user_prompt: sanitized_query)
+    ai_client.determine_intent(system_prompt: system_prompt, user_prompt: redaction_result.data)
   rescue StandardError => e
     Rails.logger.error("Intent Determination error: #{e.message}")
     error_result("Failed to determine intent: #{e.message}")
@@ -81,11 +83,6 @@ class IntentDeterminationService
   end
 
   def error_result(message)
-    {
-      "function" => "error",
-      "params" => {},
-      "confidence" => 0.0,
-      "error" => message
-    }
+    Result.failure(message)
   end
 end
