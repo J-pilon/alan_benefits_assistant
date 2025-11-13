@@ -10,13 +10,13 @@ class ResponseGenerationService
     return error_result("User query cannot be blank") if user_query.blank?
     return error_result("Data cannot be blank") if data.blank?
 
-    sanitized_query = redact_sensitive_information(user_query)
+    redaction_result = redact_sensitive_information(user_query)
+    return redaction_result if redaction_result.failure?
+
     system_prompt = build_system_prompt
-    user_prompt = build_user_prompt(sanitized_query, data, context)
+    user_prompt = build_user_prompt(redaction_result.data, data, context)
 
-    response = ai_client.generate_response(system_prompt: system_prompt, user_prompt: user_prompt)
-
-    success_result(response)
+    ai_client.generate_response(system_prompt: system_prompt, user_prompt: user_prompt)
   rescue StandardError => e
     Rails.logger.error("Response Generation error: #{e.message}")
     error_result("Failed to generate response: #{e.message}")
@@ -62,18 +62,14 @@ class ResponseGenerationService
   end
 
   def success_result(response)
-    {
-      "response" => response,
-      "confidence" => extract_confidence(response)
-    }
+    Result.success(
+      response: response,
+      confidence: extract_confidence(response)
+    )
   end
 
   def error_result(message)
-    {
-      "response" => "I'm sorry, I encountered an error while processing your request.",
-      "confidence" => 0.0,
-      "error" => message
-    }
+    Result.failure(message)
   end
 
   def extract_confidence(response)

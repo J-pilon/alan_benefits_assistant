@@ -8,51 +8,59 @@ RSpec.describe PiiRedaction::Service do
       it 'redacts email addresses' do
         text = "Contact me at john.doe@example.com"
         result = service.redact(text)
-        expect(result).to eq("Contact me at [EMAIL_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Contact me at [EMAIL_REDACTED]")
       end
 
       it 'redacts phone numbers' do
         text = "The number is 416-555-1234"
         result = service.redact(text)
-        expect(result).to eq("The number is [PHONE_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("The number is [PHONE_REDACTED]")
       end
 
       it 'redacts credit card numbers' do
         text = "The card is 4532-1234-5678-9010"
         result = service.redact(text)
-        expect(result).to eq("The card is [CREDIT_CARD_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("The card is [CREDIT_CARD_REDACTED]")
       end
 
       it 'redacts addresses' do
         text = "I live at 123 Main Street"
         result = service.redact(text)
-        expect(result).to eq("I live at [ADDRESS_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("I live at [ADDRESS_REDACTED]")
       end
 
       it 'redacts names' do
         text = "My name is John Smith and I need help."
         result = service.redact(text)
-        expect(result).to eq("My name is [NAME_REDACTED] I need help.")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("My name is [NAME_REDACTED] I need help.")
       end
 
       it 'redacts URLs' do
         text = "Visit https://example.com for more info"
         result = service.redact(text)
-        expect(result).to eq("Visit [URL_REDACTED] for more info")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Visit [URL_REDACTED] for more info")
       end
 
       it 'redacts IP addresses' do
         text = "Server IP: 192.168.1.100 online"
         result = service.redact(text)
         # IP addresses may be detected as URLs due to pattern overlap
-        expect(result).to match(/REDACTED/)
-        expect(result).not_to include("192.168.1.100")
+        expect(result.successful?).to be true
+        expect(result.data).to match(/REDACTED/)
+        expect(result.data).not_to include("192.168.1.100")
       end
 
       it 'redacts dates' do
         text = "The date is 12/25/1990"
         result = service.redact(text)
-        expect(result).to eq("The date is [DATE_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("The date is [DATE_REDACTED]")
       end
     end
 
@@ -62,7 +70,8 @@ RSpec.describe PiiRedaction::Service do
 
         text = "Postal code: M5H 2N2"
         result = service_ca.redact(text)
-        expect(result).to eq("Postal code: [POSTAL_CODE_CA_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Postal code: [POSTAL_CODE_CA_REDACTED]")
       end
 
       it 'redacts US ZIP codes when locale is en_us' do
@@ -70,7 +79,8 @@ RSpec.describe PiiRedaction::Service do
 
         text = "ZIP: 90210"
         result = service_us.redact(text)
-        expect(result).to eq("ZIP: [ZIP_CODE_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("ZIP: [ZIP_CODE_REDACTED]")
       end
 
       it 'does not redact US ZIP codes when locale is en_ca' do
@@ -78,7 +88,8 @@ RSpec.describe PiiRedaction::Service do
 
         text = "ZIP: 90210"
         result = service_ca.redact(text)
-        expect(result).to eq("ZIP: 90210")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("ZIP: 90210")
       end
     end
 
@@ -88,7 +99,8 @@ RSpec.describe PiiRedaction::Service do
 
         text = "Email: test@example.com Phone: 416-555-1234"
         result = service_filtered.redact(text)
-        expect(result).to eq("Email: [EMAIL_REDACTED] Phone: 416-555-1234")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Email: [EMAIL_REDACTED] Phone: 416-555-1234")
       end
 
       it 'redacts all patterns when enabled_patterns is :all' do
@@ -96,7 +108,8 @@ RSpec.describe PiiRedaction::Service do
 
         text = "Email: test@example.com Phone: 416-555-1234"
         result = service_all.redact(text)
-        expect(result).to eq("Email: [EMAIL_REDACTED] Phone: [PHONE_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Email: [EMAIL_REDACTED] Phone: [PHONE_REDACTED]")
       end
     end
 
@@ -104,25 +117,29 @@ RSpec.describe PiiRedaction::Service do
       it 'uses custom placeholder format when provided' do
         text = "Email: test@example.com"
         result = service.redact(text, placeholder_format: "***")
-        expect(result).to eq("Email: ***")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Email: ***")
       end
 
       it 'uses default placeholder when none specified' do
         text = "Email: test@example.com"
         result = service.redact(text)
-        expect(result).to eq("Email: [EMAIL_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Email: [EMAIL_REDACTED]")
       end
     end
 
     context 'with blank or nil input' do
-      it 'returns the text unchanged when blank' do
+      it 'returns success with the text unchanged when blank' do
         result = service.redact("")
-        expect(result).to eq("")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("")
       end
 
-      it 'returns the text unchanged when nil' do
+      it 'returns success with the text unchanged when nil' do
         result = service.redact(nil)
-        expect(result).to be_nil
+        expect(result.successful?).to be true
+        expect(result.data).to be_nil
       end
     end
 
@@ -131,8 +148,9 @@ RSpec.describe PiiRedaction::Service do
         # Email (priority 10) should be processed before name (priority 40)
         text = "Contact john.doe@example.com or John Doe"
         result = service.redact(text)
-        expect(result).to include("REDACTED")
-        expect(result).not_to include("john.doe@example.com")
+        expect(result.successful?).to be true
+        expect(result.data).to include("REDACTED")
+        expect(result.data).not_to include("john.doe@example.com")
       end
     end
   end
@@ -222,9 +240,10 @@ RSpec.describe PiiRedaction::Service do
         text = "Contact John Doe at john.doe@example.com or 416-555-1234"
         result = service.redact(text)
 
-        expect(result).not_to include("john.doe@example.com")
-        expect(result).not_to include("416-555-1234")
-        expect(result).to include("REDACTED")
+        expect(result.successful?).to be true
+        expect(result.data).not_to include("john.doe@example.com")
+        expect(result.data).not_to include("416-555-1234")
+        expect(result.data).to include("REDACTED")
       end
 
       it 'redacts complex text' do
@@ -232,9 +251,10 @@ RSpec.describe PiiRedaction::Service do
         service_ca = pii_service_with_locale(:en_ca)
 
         result = service_ca.redact(text)
-        expect(result).not_to include("123-456-789")
-        expect(result).not_to include("test@example.com")
-        expect(result).not_to include("123 Main Street")
+        expect(result.successful?).to be true
+        expect(result.data).not_to include("123-456-789")
+        expect(result.data).not_to include("test@example.com")
+        expect(result.data).not_to include("123 Main Street")
       end
     end
 
@@ -244,9 +264,10 @@ RSpec.describe PiiRedaction::Service do
         text = "Email test@example.com with date 01/15/2024"
         result = service.redact(text)
 
-        expect(result).to include("REDACTED")
-        expect(result).not_to include("test@example.com")
-        expect(result).not_to include("01/15/2024")
+        expect(result.successful?).to be true
+        expect(result.data).to include("REDACTED")
+        expect(result.data).not_to include("test@example.com")
+        expect(result.data).not_to include("01/15/2024")
       end
     end
 
@@ -256,7 +277,8 @@ RSpec.describe PiiRedaction::Service do
 
         text = "My ID is ID-123456"
         result = service_custom.redact(text)
-        expect(result).to eq("My ID is [CUSTOM_ID_REDACTED]")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("My ID is [CUSTOM_ID_REDACTED]")
       end
     end
   end

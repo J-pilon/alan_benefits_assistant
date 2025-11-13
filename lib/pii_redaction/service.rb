@@ -12,7 +12,7 @@ module PiiRedaction
     end
 
     def redact(text, placeholder_format: nil)
-      return text if text.blank?
+      return success_result(text) if text.blank?
 
       placeholder_format ||= @config.default_placeholder_format
 
@@ -29,7 +29,9 @@ module PiiRedaction
         redacted_text = pattern_def.redact(redacted_text, placeholder_format)
       end
 
-      redacted_text
+      success_result(redacted_text)
+    rescue StandardError => e
+      error_result("Failed to redact text: #{e.message}")
     end
 
     def contains_pii?(text)
@@ -59,6 +61,14 @@ module PiiRedaction
 
     def patterns_for_current_locale
       @registry.for_locale(@config.locale)
+    end
+
+    def success_result(data)
+      Result.success(data)
+    end
+
+    def error_result(message)
+      Result.failure(message)
     end
   end
 end

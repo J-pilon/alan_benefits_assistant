@@ -17,9 +17,10 @@ RSpec.describe IntentDeterminationService do
 
         result = service.perform(user_query)
 
-        expect(result["function"]).to eq("coverage_balances_read")
-        expect(result["params"]).to eq({ "category" => "massage" })
-        expect(result["confidence"]).to eq(0.95)
+        expect(result.successful?).to be true
+        expect(result.data["function"]).to eq("coverage_balances_read")
+        expect(result.data["params"]).to eq({ "category" => "massage" })
+        expect(result.data["confidence"]).to eq(0.95)
       end
 
       it 'returns confidence score from AI response' do
@@ -32,7 +33,8 @@ RSpec.describe IntentDeterminationService do
 
         result = service.perform(user_query)
 
-        expect(result["confidence"]).to eq(0.85)
+        expect(result.successful?).to be true
+        expect(result.data["confidence"]).to eq(0.85)
       end
     end
 
@@ -40,17 +42,15 @@ RSpec.describe IntentDeterminationService do
       it 'returns error result for empty string' do
         result = service.perform("")
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("User query cannot be blank")
+        expect(result.failure?).to be true
+        expect(result.error).to include("User query cannot be blank")
       end
 
       it 'returns error result for nil' do
         result = service.perform(nil)
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("User query cannot be blank")
+        expect(result.failure?).to be true
+        expect(result.error).to include("User query cannot be blank")
       end
     end
 
@@ -82,9 +82,9 @@ RSpec.describe IntentDeterminationService do
 
         result = service.perform(user_query)
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to be_present
+        expect(result.failure?).to be true
+        expect(result.error).to be_present
+        expect(result.error).to include("Failed to determine intent")
       end
 
       it 'logs errors when they occur' do
@@ -109,15 +109,18 @@ RSpec.describe IntentDeterminationService do
           redaction_service: PiiRedaction
         )
 
-        allow(mock_ai_client).to receive(:determine_intent).and_return({
-          "function" => "coverage_balances_read",
-          "params" => { "category" => "dental" },
-          "confidence" => 0.9
-        })
+        allow(mock_ai_client).to receive(:determine_intent).and_return(
+          Result.success(
+            "function" => "coverage_balances_read",
+            "params" => { "category" => "dental" },
+            "confidence" => 0.9
+          )
+        )
 
         result = service_with_mock.perform(user_query)
 
-        expect(result["function"]).to eq("coverage_balances_read")
+        expect(result.successful?).to be true
+        expect(result.data["function"]).to eq("coverage_balances_read")
         expect(mock_ai_client).to have_received(:determine_intent)
       end
 
@@ -242,10 +245,10 @@ RSpec.describe IntentDeterminationService do
 
         result = service.perform(user_query)
 
-        expect(result).to be_a(Hash)
-        expect(result["function"]).to eq("coverage_balances_read")
-        expect(result["params"]["category"]).to eq("vision")
-        expect(result["confidence"]).to eq(0.92)
+        expect(result.successful?).to be true
+        expect(result.data["function"]).to eq("coverage_balances_read")
+        expect(result.data["params"]["category"]).to eq("vision")
+        expect(result.data["confidence"]).to eq(0.92)
       end
 
       it 'handles queries with different benefit categories' do
@@ -258,8 +261,9 @@ RSpec.describe IntentDeterminationService do
 
         result = service.perform(dental_query)
 
-        expect(result["function"]).to eq("coverage_rules_explain")
-        expect(result["params"]["category"]).to eq("dental")
+        expect(result.successful?).to be true
+        expect(result.data["function"]).to eq("coverage_rules_explain")
+        expect(result.data["params"]["category"]).to eq("dental")
       end
     end
 
@@ -309,8 +313,10 @@ RSpec.describe IntentDeterminationService do
         result = service.perform(query_with_email)
 
         # Intent should still be correctly determined despite PII removal
-        expect(result["function"]).to eq("coverage_balances_read")
-        expect(result["params"]["category"]).to eq("massage")
+
+        expect(result.successful?).to be true
+        expect(result.data["function"]).to eq("coverage_balances_read")
+        expect(result.data["params"]["category"]).to eq("massage")
       end
     end
   end
