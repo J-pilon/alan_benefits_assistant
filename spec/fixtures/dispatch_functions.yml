@@ -1,0 +1,34 @@
+functions:
+  - name: coverage_balances_read
+    method: get_coverage_balance
+    description: Get remaining balance and reset date for a member's benefit category. Use this when user asks about remaining amount, how much they have left, or their balance.
+    parameters:
+      type: object
+      properties:
+        category:
+          type: string
+          description: Benefit category (massage, vision, dental, etc.)
+          enum:
+            - massage
+            - vision
+            - dental
+      required:
+        - category
+    
+  - name: coverage_rules_explain
+    method: get_benefit_coverage
+    description: Get detailed coverage rules, limits, restrictions, and version info for a category. Use this when user asks about what's covered, coverage limits, annual maximums, visit limits, eligible providers, exclusions, if they need a referral, or if a specific service is covered (e.g., "Are contact lenses covered?", "Is spa massage covered?").
+    parameters:
+      type: object
+      properties:
+        category:
+          type: string
+          description: Benefit category
+          enum:
+            - massage
+            - vision
+            - dental
+      required:
+        - category
+
+
