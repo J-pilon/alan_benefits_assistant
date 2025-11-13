@@ -32,8 +32,8 @@ FactoryBot.define do
         ],
         "restrictions" => {
           "requires_referral" => false,
-          "eligible_providers" => ["RMT", "Massage Therapist"],
-          "exclusions" => ["Spa services", "Hot stone massage"]
+          "eligible_providers" => [ "RMT", "Massage Therapist" ],
+          "exclusions" => [ "Spa services", "Hot stone massage" ]
         },
         "reset_period" => "calendar_year",
         "last_updated" => "2024-01-15T00:00:00Z"
@@ -67,8 +67,8 @@ FactoryBot.define do
           ],
           "restrictions" => {
             "requires_prescription" => true,
-            "eligible_providers" => ["Optometrist", "Optician"],
-            "exclusions" => ["Contact lenses", "Sunglasses without prescription"]
+            "eligible_providers" => [ "Optometrist", "Optician" ],
+            "exclusions" => [ "Contact lenses", "Sunglasses without prescription" ]
           },
           "reset_period" => "every_24_months",
           "last_updated" => "2024-01-15T00:00:00Z"
@@ -102,8 +102,8 @@ FactoryBot.define do
           ],
           "restrictions" => {
             "requires_referral" => false,
-            "eligible_providers" => ["Dentist", "Dental Hygienist"],
-            "exclusions" => ["Cosmetic procedures", "Orthodontics"],
+            "eligible_providers" => [ "Dentist", "Dental Hygienist" ],
+            "exclusions" => [ "Cosmetic procedures", "Orthodontics" ],
             "dependent_coverage" => true
           },
           "reset_period" => "calendar_year",
@@ -138,7 +138,7 @@ FactoryBot.define do
           ],
           "restrictions" => {
             "requires_referral" => false,
-            "eligible_providers" => ["RMT", "Massage Therapist"],
+            "eligible_providers" => [ "RMT", "Massage Therapist" ],
             "exclusions" => []
           },
           "reset_period" => "calendar_year",
