@@ -22,10 +22,11 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result).to be_a(Hash)
-        expect(result["function"]).to eq("coverage_balances_read")
-        expect(result["params"]).to eq({ "category" => "massage" })
-        expect(result["confidence"]).to eq(0.95)
+        expect(result).to be_successful
+        expect(result.data).to be_a(Hash)
+        expect(result.data["function"]).to eq("coverage_balances_read")
+        expect(result.data["params"]).to eq({ "category" => "massage" })
+        expect(result.data["confidence"]).to eq(0.95)
       end
 
       it 'calls OpenAI with correct parameters' do
@@ -88,9 +89,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("System prompt cannot be blank")
+        expect(result).to be_failure
+        expect(result.error).to include("System prompt cannot be blank")
       end
 
       it 'returns error response when user prompt is blank' do
@@ -99,9 +99,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: ""
         )
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("User prompt cannot be blank")
+        expect(result).to be_failure
+        expect(result.error).to include("User prompt cannot be blank")
       end
     end
 
@@ -116,9 +115,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("OpenAI API key not configured")
+        expect(result).to be_failure
+        expect(result.error).to include("OpenAI API key not configured")
       end
     end
 
@@ -134,9 +132,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("Failed to determine intent")
+        expect(result).to be_failure
+        expect(result.error).to include("Failed to determine intent")
       end
     end
 
@@ -161,9 +158,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("Failed to parse intent response")
+        expect(result).to be_failure
+        expect(result.error).to include("Failed to parse intent response")
       end
     end
 
@@ -188,9 +184,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result["function"]).to eq("error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("No response content received")
+        expect(result).to be_failure
+        expect(result.error).to include("No response content received")
       end
     end
   end
@@ -213,7 +208,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result).to eq(response_text)
+        expect(result).to be_successful
+        expect(result.data).to eq(response_text)
       end
 
       it 'calls OpenAI with correct parameters' do
@@ -253,7 +249,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result).to eq("I'm sorry, I don't have enough information to generate a response.")
+        expect(result).to be_failure
+        expect(result.error).to eq("I'm sorry, I don't have enough information to generate a response.")
       end
 
       it 'returns fallback message when user prompt is blank' do
@@ -262,7 +259,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: ""
         )
 
-        expect(result).to eq("I'm sorry, I don't have enough information to generate a response.")
+        expect(result).to be_failure
+        expect(result.error).to eq("I'm sorry, I don't have enough information to generate a response.")
       end
     end
 
@@ -277,7 +275,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result).to eq("I'm sorry, the service is temporarily unavailable.")
+        expect(result).to be_failure
+        expect(result.error).to eq("I'm sorry, the service is temporarily unavailable.")
       end
     end
 
@@ -293,7 +292,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result).to eq("I'm sorry, I encountered an error while generating a response.")
+        expect(result).to be_failure
+        expect(result.error).to eq("I'm sorry, I encountered an error while generating a response.")
       end
     end
 
@@ -318,7 +318,8 @@ RSpec.describe AiClients::OpenaiClient do
           user_prompt: user_prompt
         )
 
-        expect(result).to eq("I'm sorry, I couldn't generate a response.")
+        expect(result).to be_failure
+        expect(result.error).to eq("I'm sorry, I couldn't generate a response.")
       end
     end
   end

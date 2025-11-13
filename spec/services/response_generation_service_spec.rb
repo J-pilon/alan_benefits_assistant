@@ -24,25 +24,28 @@ RSpec.describe ResponseGenerationService do
 
         result = service.perform(user_query: user_query, data: data)
 
-        expect(result["response"]).to eq(response_text)
+        expect(result.successful?).to be true
+        expect(result.data).to eq(response_text)
       end
 
-      it 'includes confidence score in result' do
+      it 'includes response text in result' do
         stub_openai_generate_response(response_text: "You have $500 remaining.")
 
         result = service.perform(user_query: user_query, data: data)
 
-        expect(result["confidence"]).to be_present
-        expect(result["confidence"]).to be_a(Numeric)
-        expect(result["confidence"]).to be > 0
+        expect(result.successful?).to be true
+        expect(result.data).to be_present
+        expect(result.data).to be_a(String)
+        expect(result.data.length).to be > 0
       end
 
-      it 'returns confidence of 0.85 for valid responses' do
+      it 'returns response text for valid responses' do
         stub_openai_generate_response(response_text: "Response text")
 
         result = service.perform(user_query: user_query, data: data)
 
-        expect(result["confidence"]).to eq(0.85)
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Response text")
       end
     end
 
@@ -50,17 +53,15 @@ RSpec.describe ResponseGenerationService do
       it 'returns error result for empty string' do
         result = service.perform(user_query: "", data: data)
 
-        expect(result["response"]).to include("I'm sorry, I encountered an error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("User query cannot be blank")
+        expect(result.failure?).to be true
+        expect(result.error).to include("User query cannot be blank")
       end
 
       it 'returns error result for nil' do
         result = service.perform(user_query: nil, data: data)
 
-        expect(result["response"]).to include("I'm sorry, I encountered an error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("User query cannot be blank")
+        expect(result.failure?).to be true
+        expect(result.error).to include("User query cannot be blank")
       end
     end
 
@@ -68,25 +69,22 @@ RSpec.describe ResponseGenerationService do
       it 'returns error result for empty hash' do
         result = service.perform(user_query: user_query, data: {})
 
-        expect(result["response"]).to include("I'm sorry, I encountered an error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("Data cannot be blank")
+        expect(result.failure?).to be true
+        expect(result.error).to include("Data cannot be blank")
       end
 
       it 'returns error result for nil' do
         result = service.perform(user_query: user_query, data: nil)
 
-        expect(result["response"]).to include("I'm sorry, I encountered an error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("Data cannot be blank")
+        expect(result.failure?).to be true
+        expect(result.error).to include("Data cannot be blank")
       end
 
       it 'returns error result for empty string' do
         result = service.perform(user_query: user_query, data: "")
 
-        expect(result["response"]).to include("I'm sorry, I encountered an error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to include("Data cannot be blank")
+        expect(result.failure?).to be true
+        expect(result.error).to include("Data cannot be blank")
       end
     end
 
@@ -101,9 +99,9 @@ RSpec.describe ResponseGenerationService do
 
         result = service.perform(user_query: user_query, data: data)
 
-        expect(result["response"]).to include("I'm sorry, I encountered an error")
-        expect(result["confidence"]).to eq(0.0)
-        expect(result["error"]).to be_present
+        expect(result.failure?).to be true
+        expect(result.error).to be_present
+        expect(result.error).to include("Failed to generate response")
       end
 
       it 'logs errors when they occur' do
@@ -229,9 +227,8 @@ RSpec.describe ResponseGenerationService do
 
         result = service.perform(user_query: user_query, data: data)
 
-        expect(result).to be_a(Hash)
-        expect(result["response"]).to eq(response_text)
-        expect(result["confidence"]).to eq(0.85)
+        expect(result.successful?).to be true
+        expect(result.data).to eq(response_text)
       end
 
       it 'handles complex nested data structures' do
@@ -251,8 +248,9 @@ RSpec.describe ResponseGenerationService do
 
         result = service.perform(user_query: "What's covered for dental?", data: complex_data)
 
-        expect(result["response"]).to be_present
-        expect(result["confidence"]).to eq(0.85)
+        expect(result.successful?).to be true
+        expect(result.data).to be_present
+        expect(result.data).to eq("Dental coverage details...")
       end
     end
 
@@ -263,7 +261,7 @@ RSpec.describe ResponseGenerationService do
         expect(AiClients::OpenaiClient).to receive(:generate_response) do |args|
           expect(args[:user_prompt]).to include("Context:")
           expect(args[:user_prompt]).to include(context_info)
-          "Response with context"
+          Result.success("Response with context")
         end
 
         result = service.perform(
@@ -272,7 +270,8 @@ RSpec.describe ResponseGenerationService do
           context: context_info
         )
 
-        expect(result["response"]).to eq("Response with context")
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Response with context")
       end
 
       it 'processes successfully without context' do
@@ -280,8 +279,8 @@ RSpec.describe ResponseGenerationService do
 
         result = service.perform(user_query: user_query, data: data)
 
-        expect(result["response"]).to eq("Response without context")
-        expect(result["confidence"]).to eq(0.85)
+        expect(result.successful?).to be true
+        expect(result.data).to eq("Response without context")
       end
 
       it 'handles blank context gracefully' do
@@ -332,9 +331,9 @@ RSpec.describe ResponseGenerationService do
           data: massage_balance_data
         )
 
-        expect(result["response"]).to include("$350")
-        expect(result["response"]).to include("massage")
-        expect(result["confidence"]).to eq(0.85)
+        expect(result.successful?).to be true
+        expect(result.data).to include("$350")
+        expect(result.data).to include("massage")
       end
 
       it 'generates response for vision coverage rules query' do
@@ -347,9 +346,9 @@ RSpec.describe ResponseGenerationService do
           data: vision_coverage_data
         )
 
-        expect(result["response"]).to include("$200")
-        expect(result["response"]).to include("vision")
-        expect(result["confidence"]).to eq(0.85)
+        expect(result.successful?).to be true
+        expect(result.data).to include("$200")
+        expect(result.data).to include("vision")
       end
     end
   end
