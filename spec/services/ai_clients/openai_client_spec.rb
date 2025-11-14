@@ -24,9 +24,9 @@ RSpec.describe AiClients::OpenaiClient do
 
         expect(result).to be_successful
         expect(result.data).to be_a(Hash)
-        expect(result.data["function"]).to eq("coverage_balances_read")
-        expect(result.data["params"]).to eq({ "category" => "massage" })
-        expect(result.data["confidence"]).to eq(0.95)
+        expect(result.data[:function]).to eq("coverage_balances_read")
+        expect(result.data[:params]).to eq({ category: "massage" })
+        expect(result.data[:confidence]).to eq(0.95)
       end
 
       it 'calls OpenAI with correct parameters' do
@@ -159,7 +159,7 @@ RSpec.describe AiClients::OpenaiClient do
         )
 
         expect(result).to be_failure
-        expect(result.error).to include("Failed to parse intent response")
+        expect(result.error).to include("Failed to parse OpenAI response")
       end
     end
 
@@ -185,7 +185,7 @@ RSpec.describe AiClients::OpenaiClient do
         )
 
         expect(result).to be_failure
-        expect(result.error).to include("No response content received")
+        expect(result.error).to include("I'm sorry, I couldn't generate a response.")
       end
     end
   end
@@ -201,7 +201,7 @@ RSpec.describe AiClients::OpenaiClient do
     context 'with valid inputs' do
       it 'returns natural language response text' do
         response_text = "You have $500 remaining in your massage coverage."
-        stub_openai_generate_response(response_text: response_text)
+        stub_openai_generate_response(response_text: response_text, confidence: 0.9)
 
         result = described_class.generate_response(
           system_prompt: system_prompt,
@@ -209,7 +209,8 @@ RSpec.describe AiClients::OpenaiClient do
         )
 
         expect(result).to be_successful
-        expect(result.data).to eq(response_text)
+        expect(result.data[:response]).to eq(response_text)
+        expect(result.data[:confidence]).to eq(0.9)
       end
 
       it 'calls OpenAI with correct parameters' do
@@ -223,13 +224,14 @@ RSpec.describe AiClients::OpenaiClient do
               { role: "system", content: system_prompt },
               { role: "user", content: user_prompt }
             ],
-            temperature: 0.7
+            temperature: 0.7,
+            response_format: { type: "json_object" }
           }
         ).and_return({
           "choices" => [
             {
               "message" => {
-                "content" => "Response text"
+                "content" => '{"response":"Response text","confidence":0.9}'
               }
             }
           ]
@@ -276,7 +278,7 @@ RSpec.describe AiClients::OpenaiClient do
         )
 
         expect(result).to be_failure
-        expect(result.error).to eq("I'm sorry, the service is temporarily unavailable.")
+        expect(result.error).to eq("I'm sorry, I encountered an error while generating a response.")
       end
     end
 

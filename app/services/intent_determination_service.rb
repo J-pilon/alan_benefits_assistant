@@ -1,9 +1,10 @@
 class IntentDeterminationService
-  attr_reader :ai_client, :redaction_service
+  attr_reader :ai_client, :redaction_service, :dispatcher_service
 
-  def initialize(ai_client: nil, redaction_service: nil)
+  def initialize(ai_client: nil, redaction_service: nil, dispatcher_service: nil)
     @ai_client = ai_client || AiClients::OpenaiClient
     @redaction_service = redaction_service || PiiRedaction
+    @dispatcher_service = dispatcher_service || FunctionDispatcher
   end
 
   def perform(user_query)
@@ -27,20 +28,6 @@ class IntentDeterminationService
   end
 
   def build_system_prompt
-    functions = sanitized_function_definitions
-    function_names = functions.map { |f| f[:name] }.compact
-    function_list = functions.map { |f| "- #{f[:name]}: #{f[:description]}" }.join("\n")
-
-    # Extract categories from the first function that has category enum
-    categories = []
-    functions.each do |func|
-      category_enum = func.dig(:params_schema, "properties", "category", "enum")
-      if category_enum.present?
-        categories = category_enum
-        break
-      end
-    end
-
     categories_text = categories.any? ? "Categories can be: #{categories.join(', ')}." : ""
 
     <<~PROMPT
@@ -58,20 +45,24 @@ class IntentDeterminationService
     PROMPT
   end
 
-  def function_definitions
-    yaml_content = YAML.load_file(function_definitions_file_path)
-
-    yaml_content["functions"] || []
+  def function_names
+    registry.all.map { |func| func.name.to_s }
   end
 
-  def sanitized_function_definitions
-    function_definitions.map do |func_def|
-      {
-        name: func_def["name"],
-        description: func_def["description"],
-        params_schema: func_def["parameters"]
-      }
+  def function_list
+    registry.all.map { |func| "- #{func.name}: #{func.description}" }.join("\n")
+  end
+
+  def categories
+    registry.all.each do |func|
+      enum = func.param_schema.dig("properties", "category", "enum")
+      return enum if enum.present?
     end
+    []
+  end
+
+  def registry
+    @dispatcher_service.service.registry
   end
 
   def function_definitions_file_path
