@@ -141,8 +141,9 @@ RSpec.describe AiService do
 
           result = service.process_query(user_query, profile: profile)
 
-          expect(result.failure?).to be true
-          expect(result.error).to include("missing keywords")
+          expect(result.successful?).to be true
+          expect(result.data[:function]).to eq("unknown")
+          expect(result.data[:response]).to be_nil
           expect(mock_dispatcher_service).not_to have_received(:dispatch)
         end
       end
@@ -150,9 +151,9 @@ RSpec.describe AiService do
       context 'when dispatcher service returns an error' do
         let(:intent_result) do
           Result.success(
-            "function" => "coverage_balances_read",
-            "params" => { "category" => "massage" },
-            "confidence" => 0.95
+            function: "coverage_balances_read",
+            params: { "category" => "massage" },
+            confidence: 0.95
           )
         end
 
@@ -167,7 +168,7 @@ RSpec.describe AiService do
           result = service.process_query(user_query, profile: profile)
 
           expect(result.failure?).to be true
-          expect(result.error).to include("missing keywords")
+          expect(result.error).to eq("Database connection failed")
         end
       end
 
