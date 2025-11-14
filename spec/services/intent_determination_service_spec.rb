@@ -18,9 +18,9 @@ RSpec.describe IntentDeterminationService do
         result = service.perform(user_query)
 
         expect(result.successful?).to be true
-        expect(result.data["function"]).to eq("coverage_balances_read")
-        expect(result.data["params"]).to eq({ "category" => "massage" })
-        expect(result.data["confidence"]).to eq(0.95)
+        expect(result.data[:function]).to eq("coverage_balances_read")
+        expect(result.data[:params]).to eq({ category: "massage" })
+        expect(result.data[:confidence]).to eq(0.95)
       end
 
       it 'returns confidence score from AI response' do
@@ -34,7 +34,7 @@ RSpec.describe IntentDeterminationService do
         result = service.perform(user_query)
 
         expect(result.successful?).to be true
-        expect(result.data["confidence"]).to eq(0.85)
+        expect(result.data[:confidence]).to eq(0.85)
       end
     end
 
@@ -63,11 +63,11 @@ RSpec.describe IntentDeterminationService do
         # Set up expectation that the AI client receives redacted text
         expect(AiClients::OpenaiClient).to receive(:determine_intent)
           .with(hash_including(user_prompt: match(/REDACTED/)))
-          .and_return({
-            "function" => "coverage_balances_read",
-            "params" => { "category" => "massage" },
-            "confidence" => 0.9
-          })
+          .and_return(Result.success(
+            function: "coverage_balances_read",
+            params: { "category" => "massage" },
+            confidence: 0.9
+          ))
 
         service.perform(query_with_pii)
       end
@@ -111,16 +111,16 @@ RSpec.describe IntentDeterminationService do
 
         allow(mock_ai_client).to receive(:determine_intent).and_return(
           Result.success(
-            "function" => "coverage_balances_read",
-            "params" => { "category" => "dental" },
-            "confidence" => 0.9
+            function: "coverage_balances_read",
+            params: { "category" => "dental" },
+            confidence: 0.9
           )
         )
 
         result = service_with_mock.perform(user_query)
 
         expect(result.successful?).to be true
-        expect(result.data["function"]).to eq("coverage_balances_read")
+        expect(result.data[:function]).to eq("coverage_balances_read")
         expect(mock_ai_client).to have_received(:determine_intent)
       end
 
@@ -169,11 +169,11 @@ RSpec.describe IntentDeterminationService do
         expect(AiClients::OpenaiClient).to receive(:determine_intent) do |args|
           expect(args[:system_prompt]).to include("coverage_balances_read")
           expect(args[:system_prompt]).to include("coverage_rules_explain")
-          {
-            "function" => "test",
-            "params" => {},
-            "confidence" => 0.9
-          }
+          Result.success(
+            function: "test",
+            params: {},
+            confidence: 0.9
+          )
         end
 
         service.perform(user_query)
@@ -184,11 +184,11 @@ RSpec.describe IntentDeterminationService do
           expect(args[:system_prompt]).to include("massage")
           expect(args[:system_prompt]).to include("vision")
           expect(args[:system_prompt]).to include("dental")
-          {
-            "function" => "test",
-            "params" => {},
-            "confidence" => 0.9
-          }
+          Result.success(
+            function: "test",
+            params: {},
+            confidence: 0.9
+          )
         end
 
         service.perform(user_query)
@@ -198,11 +198,11 @@ RSpec.describe IntentDeterminationService do
         expect(AiClients::OpenaiClient).to receive(:determine_intent) do |args|
           expect(args[:system_prompt]).to include("remaining balance")
           expect(args[:system_prompt]).to include("coverage rules")
-          {
-            "function" => "test",
-            "params" => {},
-            "confidence" => 0.9
-          }
+          Result.success(
+            function: "test",
+            params: {},
+            confidence: 0.9
+          )
         end
 
         service.perform(user_query)
@@ -246,9 +246,9 @@ RSpec.describe IntentDeterminationService do
         result = service.perform(user_query)
 
         expect(result.successful?).to be true
-        expect(result.data["function"]).to eq("coverage_balances_read")
-        expect(result.data["params"]["category"]).to eq("vision")
-        expect(result.data["confidence"]).to eq(0.92)
+        expect(result.data[:function]).to eq("coverage_balances_read")
+        expect(result.data[:params][:category]).to eq("vision")
+        expect(result.data[:confidence]).to eq(0.92)
       end
 
       it 'handles queries with different benefit categories' do
@@ -262,8 +262,8 @@ RSpec.describe IntentDeterminationService do
         result = service.perform(dental_query)
 
         expect(result.successful?).to be true
-        expect(result.data["function"]).to eq("coverage_rules_explain")
-        expect(result.data["params"]["category"]).to eq("dental")
+        expect(result.data[:function]).to eq("coverage_rules_explain")
+        expect(result.data[:params][:category]).to eq("dental")
       end
     end
 
@@ -279,11 +279,11 @@ RSpec.describe IntentDeterminationService do
         expect(AiClients::OpenaiClient).to receive(:determine_intent) do |args|
           expect(args[:user_prompt]).not_to include("test@example.com")
           expect(args[:user_prompt]).to include("REDACTED")
-          {
-            "function" => "coverage_balances_read",
-            "params" => { "category" => "massage" },
-            "confidence" => 0.9
-          }
+          Result.success(
+            function: "coverage_balances_read",
+            params: { "category" => "massage" },
+            confidence: 0.9
+          )
         end
 
         service.perform(query_with_email)
@@ -293,11 +293,11 @@ RSpec.describe IntentDeterminationService do
         expect(AiClients::OpenaiClient).to receive(:determine_intent) do |args|
           expect(args[:user_prompt]).not_to include("416-555-1234")
           expect(args[:user_prompt]).to include("REDACTED")
-          {
-            "function" => "coverage_balances_read",
-            "params" => {},
-            "confidence" => 0.9
-          }
+          Result.success(
+            function: "coverage_balances_read",
+            params: {},
+            confidence: 0.9
+          )
         end
 
         service.perform(query_with_phone)
@@ -315,8 +315,8 @@ RSpec.describe IntentDeterminationService do
         # Intent should still be correctly determined despite PII removal
 
         expect(result.successful?).to be true
-        expect(result.data["function"]).to eq("coverage_balances_read")
-        expect(result.data["params"]["category"]).to eq("massage")
+        expect(result.data[:function]).to eq("coverage_balances_read")
+        expect(result.data[:params][:category]).to eq("massage")
       end
     end
   end

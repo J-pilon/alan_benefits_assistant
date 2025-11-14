@@ -20,32 +20,34 @@ RSpec.describe ResponseGenerationService do
 
       it 'returns successful response generation' do
         response_text = "You have $500 remaining in your massage coverage, which resets on December 31, 2024."
-        stub_openai_generate_response(response_text: response_text)
+        stub_openai_generate_response(response_text: response_text, confidence: 0.9)
 
         result = service.perform(user_query: user_query, data: data)
 
         expect(result.successful?).to be true
-        expect(result.data).to eq(response_text)
+        expect(result.data[:response]).to eq(response_text)
+        expect(result.data[:confidence]).to eq(0.9)
       end
 
       it 'includes response text in result' do
-        stub_openai_generate_response(response_text: "You have $500 remaining.")
+        stub_openai_generate_response(response_text: "You have $500 remaining.", confidence: 0.9)
 
         result = service.perform(user_query: user_query, data: data)
 
         expect(result.successful?).to be true
         expect(result.data).to be_present
-        expect(result.data).to be_a(String)
-        expect(result.data.length).to be > 0
+        expect(result.data[:response]).to be_a(String)
+        expect(result.data[:response].length).to be > 0
       end
 
       it 'returns response text for valid responses' do
-        stub_openai_generate_response(response_text: "Response text")
+        stub_openai_generate_response(response_text: "Response text", confidence: 0.9)
 
         result = service.perform(user_query: user_query, data: data)
 
         expect(result.successful?).to be true
-        expect(result.data).to eq("Response text")
+        expect(result.data[:response]).to eq("Response text")
+        expect(result.data[:confidence]).to eq(0.9)
       end
     end
 
@@ -137,7 +139,7 @@ RSpec.describe ResponseGenerationService do
           expect(args[:system_prompt]).to include("benefits assistant")
           expect(args[:system_prompt]).to include("clear, concise, and friendly")
           expect(args[:system_prompt]).to include("based only on the provided data")
-          "Response"
+          Result.success(response: "Response", confidence: 0.9)
         end
 
         service.perform(user_query: user_query, data: data)
@@ -146,7 +148,7 @@ RSpec.describe ResponseGenerationService do
       it 'includes accuracy requirements in prompt' do
         expect(AiClients::OpenaiClient).to receive(:generate_response) do |args|
           expect(args[:system_prompt]).to include("Not make up any information")
-          "Response"
+          Result.success(response: "Response", confidence: 0.9)
         end
 
         service.perform(user_query: user_query, data: data)
@@ -162,7 +164,7 @@ RSpec.describe ResponseGenerationService do
         expect(AiClients::OpenaiClient).to receive(:generate_response) do |args|
           expect(args[:user_prompt]).to include("User Query:")
           expect(args[:user_prompt]).to include("coverage")
-          "Response"
+          Result.success(response: "Response", confidence: 0.9)
         end
 
         service.perform(user_query: user_query, data: data)
@@ -173,7 +175,7 @@ RSpec.describe ResponseGenerationService do
           expect(args[:user_prompt]).to include("Data:")
           expect(args[:user_prompt]).to include("massage")
           expect(args[:user_prompt]).to include("500")
-          "Response"
+          Result.success(response: "Response", confidence: 0.9)
         end
 
         service.perform(user_query: user_query, data: data)
@@ -185,7 +187,7 @@ RSpec.describe ResponseGenerationService do
         expect(AiClients::OpenaiClient).to receive(:generate_response) do |args|
           expect(args[:user_prompt]).to include("Context:")
           expect(args[:user_prompt]).to include(context_info)
-          "Response"
+          Result.success(response: "Response", confidence: 0.9)
         end
 
         service.perform(user_query: user_query, data: data, context: context_info)
@@ -194,7 +196,7 @@ RSpec.describe ResponseGenerationService do
       it 'omits context section when not provided' do
         expect(AiClients::OpenaiClient).to receive(:generate_response) do |args|
           expect(args[:user_prompt]).not_to include("Context:")
-          "Response"
+          Result.success(response: "Response", confidence: 0.9)
         end
 
         service.perform(user_query: user_query, data: data)
@@ -223,12 +225,13 @@ RSpec.describe ResponseGenerationService do
     context 'end-to-end with stubbed OpenAI' do
       it 'processes query and data into natural response' do
         response_text = "Your vision coverage allows up to $200 every 24 months, with up to $150 for frames."
-        stub_openai_generate_response(response_text: response_text)
+        stub_openai_generate_response(response_text: response_text, confidence: 0.9)
 
         result = service.perform(user_query: user_query, data: data)
 
         expect(result.successful?).to be true
-        expect(result.data).to eq(response_text)
+        expect(result.data[:response]).to eq(response_text)
+        expect(result.data[:confidence]).to eq(0.9)
       end
 
       it 'handles complex nested data structures' do
@@ -244,13 +247,14 @@ RSpec.describe ResponseGenerationService do
           }
         }
 
-        stub_openai_generate_response(response_text: "Dental coverage details...")
+        stub_openai_generate_response(response_text: "Dental coverage details...", confidence: 0.9)
 
         result = service.perform(user_query: "What's covered for dental?", data: complex_data)
 
         expect(result.successful?).to be true
         expect(result.data).to be_present
-        expect(result.data).to eq("Dental coverage details...")
+        expect(result.data[:response]).to eq("Dental coverage details...")
+        expect(result.data[:confidence]).to eq(0.9)
       end
     end
 
@@ -261,7 +265,7 @@ RSpec.describe ResponseGenerationService do
         expect(AiClients::OpenaiClient).to receive(:generate_response) do |args|
           expect(args[:user_prompt]).to include("Context:")
           expect(args[:user_prompt]).to include(context_info)
-          Result.success("Response with context")
+          Result.success(response: "Response with context", confidence: 0.9)
         end
 
         result = service.perform(
@@ -271,22 +275,23 @@ RSpec.describe ResponseGenerationService do
         )
 
         expect(result.successful?).to be true
-        expect(result.data).to eq("Response with context")
+        expect(result.data[:response]).to eq("Response with context")
       end
 
       it 'processes successfully without context' do
-        stub_openai_generate_response(response_text: "Response without context")
+        stub_openai_generate_response(response_text: "Response without context", confidence: 0.9)
 
         result = service.perform(user_query: user_query, data: data)
 
         expect(result.successful?).to be true
-        expect(result.data).to eq("Response without context")
+        expect(result.data[:response]).to eq("Response without context")
+        expect(result.data[:confidence]).to eq(0.9)
       end
 
       it 'handles blank context gracefully' do
         expect(AiClients::OpenaiClient).to receive(:generate_response) do |args|
           expect(args[:user_prompt]).not_to include("Context:")
-          "Response"
+          Result.success(response: "Response", confidence: 0.9)
         end
 
         service.perform(user_query: user_query, data: data, context: "")
@@ -323,7 +328,8 @@ RSpec.describe ResponseGenerationService do
 
       it 'generates response for massage balance query' do
         stub_openai_generate_response(
-          response_text: "You have $350 remaining in your massage coverage for this year. Your coverage resets on December 31, 2024."
+          response_text: "You have $350 remaining in your massage coverage for this year. Your coverage resets on December 31, 2024.",
+          confidence: 0.9
         )
 
         result = service.perform(
@@ -332,13 +338,14 @@ RSpec.describe ResponseGenerationService do
         )
 
         expect(result.successful?).to be true
-        expect(result.data).to include("$350")
-        expect(result.data).to include("massage")
+        expect(result.data[:response]).to include("$350")
+        expect(result.data[:response]).to include("massage")
       end
 
       it 'generates response for vision coverage rules query' do
         stub_openai_generate_response(
-          response_text: "Your vision coverage provides up to $200 every 24 months. You can get up to $150 for frames and $100 for lenses. A prescription is required."
+          response_text: "Your vision coverage provides up to $200 every 24 months. You can get up to $150 for frames and $100 for lenses. A prescription is required.",
+          confidence: 0.9
         )
 
         result = service.perform(
@@ -347,8 +354,8 @@ RSpec.describe ResponseGenerationService do
         )
 
         expect(result.successful?).to be true
-        expect(result.data).to include("$200")
-        expect(result.data).to include("vision")
+        expect(result.data[:response]).to include("$200")
+        expect(result.data[:response]).to include("vision")
       end
     end
   end

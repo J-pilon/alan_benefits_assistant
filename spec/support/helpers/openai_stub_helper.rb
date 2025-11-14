@@ -17,12 +17,15 @@ module OpenaiStubHelper
     allow_any_instance_of(OpenAI::Client).to receive(:chat).and_return(response)
   end
 
-  def stub_openai_generate_response(response_text:)
+  def stub_openai_generate_response(response_text:, confidence: 0.9)
     response = {
       "choices" => [
         {
           "message" => {
-            "content" => response_text
+            "content" => {
+              "response" => response_text,
+              "confidence" => confidence
+            }.to_json
           }
         }
       ]
