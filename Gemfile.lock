@@ -157,8 +157,8 @@ GEM
     minitest (5.26.1)
     msgpack (1.8.0)
     multipart-post (2.4.1)
-    net-http (0.7.0)
-      uri
+    net-http (0.8.0)
+      uri (>= 0.11.1)
     net-imap (0.5.12)
       date
       net-protocol
@@ -282,7 +282,7 @@ GEM
       rubocop (>= 1.72)
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
-    ruby-openai (7.4.0)
+    ruby-openai (8.3.0)
       event_stream_parser (>= 0.3.0, < 2.0.0)
       faraday (>= 1)
       faraday-multipart (>= 1)
@@ -356,7 +356,7 @@ DEPENDENCIES
   rails (~> 7.2.2, >= 7.2.2.2)
   rspec-rails (~> 8.0)
   rubocop-rails-omakase
-  ruby-openai (~> 7.0)
+  ruby-openai (~> 8.3)
   selenium-webdriver
   sprockets-rails
   sqlite3 (>= 1.4)
