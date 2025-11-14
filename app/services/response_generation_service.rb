@@ -31,14 +31,18 @@ class ResponseGenerationService
   def build_system_prompt
     <<~PROMPT
       You are a helpful benefits assistant. Generate a clear, concise, and friendly response
-      based on the provided data. Your response should:
+      based on the provided data. Return a JSON object with:
+      - "response": written in plain English
+      - "confidence": a float between 0 and 1 indicating confidence in answering the user's question
+
+      The response needs to:
       - Be written in plain English
       - Be accurate and based only on the provided data
       - Include specific amounts, dates, and limits when available
       - Be professional but conversational
       - Not make up any information not in the provided data
 
-      Format your response as a natural, helpful message to the user.
+      Format your response as a JSON object with a "response" property that is a natural, helpful message to the user and a "confidence" property that is a float between 0 and 1.
     PROMPT
   end
 
@@ -61,19 +65,7 @@ class ResponseGenerationService
     end
   end
 
-  def success_result(response)
-    Result.success(
-      response: response,
-      confidence: extract_confidence(response)
-    )
-  end
-
   def error_result(message)
     Result.failure(message)
-  end
-
-  def extract_confidence(response)
-    # Default confidence score - could be enhanced to extract from AI response
-    response.present? ? 0.85 : 0.0
   end
 end
