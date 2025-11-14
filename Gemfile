@@ -54,7 +54,7 @@ group :development, :test do
 end
 
 # OpenAI API client
-gem "ruby-openai", "~> 7.0"
+gem "ruby-openai", "~> 8.3"
 
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
