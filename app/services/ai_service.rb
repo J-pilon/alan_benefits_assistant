@@ -55,7 +55,10 @@ class AiService
     success_result(
       function: intent_result.data[:function],
       params: intent_result.data[:params],
-      intent_confidence: intent_result.data[:confidence]
+      intent_confidence: intent_result.data[:confidence],
+      function_result: "unknown",
+      response: nil,
+      response_confidence: 0.0
     )
   end
 
